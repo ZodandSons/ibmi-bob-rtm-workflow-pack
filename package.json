@@ -1,0 +1,85 @@
+{
+  "name": "rtm-ibmi",
+  "displayName": "RTM for IBM i (Bob)",
+  "description": "Requirements traceability for RPGLE / CLLE / DDS / SQL projects: product spec → functional requirements → impact analysis → technical specification → generated artifacts and tests, driven by IBM Bob.",
+  "version": "0.1.0",
+  "publisher": "jcwconsulting",
+  "license": "UNLICENSED",
+  "engines": { "vscode": "^1.90.0" },
+  "categories": ["Other", "Testing"],
+  "main": "./out/extension.js",
+  "bin": { "rtm-cli": "./out/cli.js" },
+  "activationEvents": ["workspaceContains:rtm/rtm.json", "onView:rtmExplorer"],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [{ "id": "rtm", "title": "RTM", "icon": "media/rtm.svg" }]
+    },
+    "views": {
+      "rtm": [{ "id": "rtmExplorer", "name": "Traceability" }]
+    },
+    "viewsWelcome": [{
+      "view": "rtmExplorer",
+      "contents": "No traceability matrix in this workspace.\n[Initialise RTM project](command:rtm.init)\n[Install Bob modes & commands](command:rtm.installBobPack)"
+    }],
+    "commands": [
+      { "command": "rtm.init", "title": "Initialise project", "category": "RTM" },
+      { "command": "rtm.installBobPack", "title": "Install Bob modes, commands & rules", "category": "RTM" },
+      { "command": "rtm.importSpec", "title": "Import product specification → requirements", "category": "RTM" },
+      { "command": "rtm.step.requirements", "title": "1 · Generate functional requirements", "category": "RTM" },
+      { "command": "rtm.step.analyze", "title": "2 · Analyse existing application (impact)", "category": "RTM" },
+      { "command": "rtm.step.techspec", "title": "3 · Generate technical specification", "category": "RTM" },
+      { "command": "rtm.step.tests", "title": "4 · Generate unit, QA & headless tests", "category": "RTM" },
+      { "command": "rtm.step.build", "title": "5 · Execute technical specification (build)", "category": "RTM" },
+      { "command": "rtm.step.verify", "title": "6 · Run tests & record results", "category": "RTM" },
+      { "command": "rtm.step.change", "title": "Apply change request", "category": "RTM" },
+      { "command": "rtm.step.status", "title": "Status report (Bob)", "category": "RTM" },
+      { "command": "rtm.validate", "title": "Validate traceability", "category": "RTM", "icon": "$(check-all)" },
+      { "command": "rtm.showMatrix", "title": "Show traceability matrix", "category": "RTM", "icon": "$(table)" },
+      { "command": "rtm.exportMatrix", "title": "Export matrix to docs/rtm.md", "category": "RTM" },
+      { "command": "rtm.refresh", "title": "Refresh", "category": "RTM", "icon": "$(refresh)" },
+      { "command": "rtm.revealId", "title": "Reveal id in rtm.json", "category": "RTM" }
+    ],
+    "menus": {
+      "view/title": [
+        { "command": "rtm.showMatrix", "when": "view == rtmExplorer", "group": "navigation" },
+        { "command": "rtm.validate", "when": "view == rtmExplorer", "group": "navigation" },
+        { "command": "rtm.refresh", "when": "view == rtmExplorer", "group": "navigation" }
+      ],
+      "explorer/context": [
+        { "command": "rtm.importSpec", "when": "resourceExtname =~ /\\.(md|txt|docx|pdf)$/", "group": "rtm" }
+      ],
+      "commandPalette": [{ "command": "rtm.revealId", "when": "false" }]
+    },
+    "jsonValidation": [{ "fileMatch": "**/rtm/rtm.json", "url": "./schemas/rtm.schema.json" }],
+    "configuration": {
+      "title": "RTM for IBM i",
+      "properties": {
+        "rtm.file": { "type": "string", "default": "rtm/rtm.json", "description": "Path of the RTM file relative to the workspace." },
+        "rtm.requireHeadless": { "type": "boolean", "default": false, "description": "Treat a missing automated headless QA test as an error instead of a warning." },
+        "rtm.bob.path": { "type": "string", "default": "bob", "description": "Bob Shell executable." },
+        "rtm.bob.invocation": {
+          "type": "string", "enum": ["shell-interactive", "shell-headless", "ide-chat"], "default": "shell-interactive",
+          "enumDescriptions": [
+            "Open Bob Shell in a terminal in the step's mode and type the slash command (you approve each tool use).",
+            "Run `bob -p` non-interactively (for CI / unattended). Add your approval flag to rtm.bob.extraArgs.",
+            "Inside IBM Bob IDE: copy the slash command and focus Bob's chat."
+          ]
+        },
+        "rtm.bob.extraArgs": { "type": "array", "items": { "type": "string" }, "default": [], "description": "Extra Bob Shell arguments, e.g. an approval-mode or model flag." },
+        "rtm.bob.initialPromptFlag": { "type": "string", "default": "", "description": "If your Bob Shell supports starting interactive with a prompt, its flag. Otherwise the command is typed after startup." },
+        "rtm.bob.startupDelayMs": { "type": "number", "default": 3000 },
+        "rtm.bob.chatFocusCommand": { "type": "string", "default": "", "description": "VS Code command id that focuses Bob's chat panel in Bob IDE." }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "watch": "tsc -w -p .",
+    "package": "vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.90.0",
+    "typescript": "^5.4.0"
+  }
+}

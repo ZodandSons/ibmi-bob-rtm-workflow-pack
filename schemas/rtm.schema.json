@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "IBM i Requirements Traceability Matrix",
+  "type": "object",
+  "required": ["version", "project", "mode", "requirements", "artifacts", "tests"],
+  "definitions": {
+    "ids": { "type": "array", "items": { "type": "string" } },
+    "objType": { "enum": ["RPGLE","SQLRPGLE","CLLE","CMD","SRVPGM","BNDDIR","MODULE","DSPF","PRTF","PF","LF","SQL_TABLE","SQL_VIEW","SQL_INDEX","SQL_PROCEDURE","SQL_TRIGGER","MSGF","DTAARA","JOBD","OTHER"] }
+  },
+  "properties": {
+    "version": { "const": 1 },
+    "project": {
+      "type": "object", "required": ["name", "library"],
+      "properties": {
+        "name": { "type": "string" },
+        "library": { "type": "string", "maxLength": 10 },
+        "sourceLibrary": { "type": "string", "maxLength": 10 },
+        "ifsRoot": { "type": "string" }
+      }
+    },
+    "mode": { "enum": ["greenfield", "brownfield"] },
+    "inputs": { "type": "object", "properties": {
+      "productSpec": { "type": "string" }, "techSpec": { "type": "string" },
+      "requirementsDoc": { "type": "string" }, "impactDoc": { "type": "string" } } },
+    "requirements": { "type": "array", "items": {
+      "type": "object", "required": ["id", "title", "description", "acceptanceCriteria", "status"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^FR-\\d{3,}$" },
+        "title": { "type": "string" }, "description": { "type": "string" }, "source": { "type": "string" },
+        "priority": { "enum": ["must", "should", "could"] },
+        "acceptanceCriteria": { "type": "array", "items": { "type": "string" } },
+        "status": { "enum": ["draft", "approved", "implemented", "verified", "deferred"] } } } },
+    "impact": { "type": "array", "items": {
+      "type": "object", "required": ["id", "object", "type", "change", "risk", "reqIds"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^IMP-\\d{3,}$" },
+        "object": { "type": "string", "maxLength": 10 }, "type": { "$ref": "#/definitions/objType" },
+        "library": { "type": "string" }, "path": { "type": "string" }, "change": { "type": "string" },
+        "risk": { "enum": ["low", "medium", "high"] }, "reqIds": { "$ref": "#/definitions/ids" },
+        "callers": { "$ref": "#/definitions/ids" }, "levelCheck": { "type": "boolean" } } } },
+    "artifacts": { "type": "array", "items": {
+      "type": "object", "required": ["id", "type", "name", "path", "action", "reqIds", "status"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^ART-\\d{3,}$" }, "type": { "$ref": "#/definitions/objType" },
+        "name": { "type": "string", "maxLength": 10 }, "library": { "type": "string" }, "path": { "type": "string" },
+        "action": { "enum": ["new", "modify", "delete"] }, "reqIds": { "$ref": "#/definitions/ids" },
+        "impactIds": { "$ref": "#/definitions/ids" }, "dependsOn": { "$ref": "#/definitions/ids" },
+        "specRef": { "type": "string" }, "status": { "enum": ["planned", "generated", "built", "failed"] } } } },
+    "tests": { "type": "array", "items": {
+      "type": "object", "required": ["id", "kind", "title", "reqIds", "artifactIds"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^(UT|QA|HQ)-\\d{3,}$" },
+        "kind": { "enum": ["unit", "qa-manual", "qa-headless"] }, "title": { "type": "string" },
+        "reqIds": { "$ref": "#/definitions/ids" }, "artifactIds": { "$ref": "#/definitions/ids" },
+        "path": { "type": "string" },
+        "lastResult": { "type": "object", "properties": {
+          "status": { "enum": ["pass", "fail", "blocked", "not-run"] },
+          "at": { "type": "string" }, "detail": { "type": "string" } } } } } }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "project": { "name": "Customer credit hold", "library": "ORDDEV", "ifsRoot": "/home/dev/orders" },
+  "mode": "brownfield",
+  "inputs": {
+    "productSpec": "docs/spec/credit-hold.md",
+    "requirementsDoc": "docs/requirements/functional-requirements.md",
+    "impactDoc": "docs/analysis/impact-analysis.md",
+    "techSpec": "docs/techspec/technical-specification.md"
+  },
+  "requirements": [
+    { "id": "FR-001", "title": "Place customer on credit hold", "description": "A credit manager can place a customer on hold with a reason code.", "source": "spec §2.1", "priority": "must",
+      "acceptanceCriteria": ["Given customer 1001 is active, when hold is set with reason PASTDUE, then CUSTMAST.CRHOLD = 'Y' and a CRHOLDLOG row is written"], "status": "approved" },
+    { "id": "FR-002", "title": "Block order entry for held customers", "description": "Order entry rejects new orders for customers on hold.", "source": "spec §2.2", "priority": "must",
+      "acceptanceCriteria": ["Given customer 1001 is on hold, when an order is entered, then message ORD0107 is shown and no ORDHDR row is created"], "status": "approved" },
+    { "id": "FR-003", "title": "Hold history inquiry", "description": "Users can view the hold history of a customer.", "source": "spec §2.3", "priority": "should",
+      "acceptanceCriteria": [], "status": "approved" }
+  ],
+  "impact": [
+    { "id": "IMP-001", "object": "CUSTMAST", "type": "PF", "path": "qddssrc/custmast.pf", "change": "Add CRHOLD 1A and CRHRSN 10A to record CUSTR", "risk": "high", "reqIds": ["FR-001", "FR-002"], "callers": ["ORDENT", "CUSTMNT"], "levelCheck": true },
+    { "id": "IMP-002", "object": "ORDENT", "type": "SQLRPGLE", "path": "qrpglesrc/ordent.sqlrpgle", "change": "Check CRHOLD in procedure validateCustomer before writing ORDHDR", "risk": "medium", "reqIds": ["FR-002"] }
+  ],
+  "artifacts": [
+    { "id": "ART-001", "type": "PF", "name": "CUSTMAST", "path": "qddssrc/custmast.pf", "action": "modify", "reqIds": ["FR-001", "FR-002"], "impactIds": ["IMP-001"], "status": "built" },
+    { "id": "ART-002", "type": "SQL_TABLE", "name": "CRHOLDLOG", "path": "qsqlsrc/crholdlog.sql", "action": "new", "reqIds": ["FR-001", "FR-003"], "status": "built" },
+    { "id": "ART-003", "type": "SQLRPGLE", "name": "ORDENT", "path": "qrpglesrc/ordent.sqlrpgle", "action": "modify", "reqIds": ["FR-002"], "impactIds": ["IMP-002"], "dependsOn": ["ART-001"], "status": "built" },
+    { "id": "ART-004", "type": "DSPF", "name": "CRHOLDD", "path": "qddssrc/crholdd.dspf", "action": "new", "reqIds": ["FR-001", "FR-003"], "status": "generated" },
+    { "id": "ART-005", "type": "SQLRPGLE", "name": "CRHOLD", "path": "qrpglesrc/crhold.sqlrpgle", "action": "new", "reqIds": ["FR-001", "FR-003"], "dependsOn": ["ART-002", "ART-004"], "status": "planned" },
+    { "id": "ART-006", "type": "RPGLE", "name": "CUSTMNT", "path": "qrpglesrc/custmnt.rpgle", "action": "modify", "reqIds": ["FR-001"], "dependsOn": ["ART-001"], "status": "planned" }
+  ],
+  "tests": [
+    { "id": "UT-001", "kind": "unit", "title": "validateCustomer rejects held customer", "reqIds": ["FR-002"], "artifactIds": ["ART-003"], "path": "tests/unit/tordent.rpgle", "lastResult": { "status": "pass", "at": "2026-10-20T15:00:00Z" } },
+    { "id": "UT-002", "kind": "unit", "title": "setHold writes log row", "reqIds": ["FR-001"], "artifactIds": ["ART-005"], "path": "tests/unit/tcrhold.rpgle" },
+    { "id": "QA-001", "kind": "qa-manual", "title": "Place and release hold via CRHOLD screen", "reqIds": ["FR-001"], "artifactIds": ["ART-004", "ART-005"], "path": "tests/qa/QA-001.md" },
+    { "id": "HQ-001", "kind": "qa-headless", "title": "Order rejected for held customer", "reqIds": ["FR-002"], "artifactIds": ["ART-003"], "path": "tests/headless/HQ-001.sh", "lastResult": { "status": "fail", "at": "2026-10-20T15:05:00Z", "detail": "ORDHDR row created" } }
+  ]
+}
